@@ -197,6 +197,15 @@ class _InAndOutAppState extends State<InAndOut> {
       _counter--;
     });
   }
+  void _clearChannel() {
+    socketService.subscribe(socketService.socketServer, '');
+    _controller.text = '';
+
+    setState(() {
+      _channel = '';
+      _isListening = false;
+    });
+  }
 
   void _clearCounter() {
     socketService.setCount(0);
@@ -249,20 +258,58 @@ class _InAndOutAppState extends State<InAndOut> {
                   color: Color.fromARGB(255, 69, 122, 164),
                 ),
               ),
-              TextField(
-                decoration: InputDecoration(
-                  contentPadding: EdgeInsets.all(8),
-                  border: InputBorder.none,
-                  hintText: 'Specify a Channel Name',
-                  labelText: 'Channel Name',
-                ),
+              Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  children: <Widget>[
+                    TextField(
+                      decoration: InputDecoration(
+                        contentPadding: EdgeInsets.all(8),
+                        border: InputBorder.none,
+                        hintText: 'Specify a Channel Name',
+                        labelText: 'Channel Name',
+                        suffixIcon: IconButton(
+                          icon: Icon(Icons.remove),
+                          onPressed: () {
+                            _clearChannel();
+                          }
+                        )),
+                      style: TextStyle(color: Colors.black, fontSize: 21),
+                      onChanged: _setChannelName,
+                      controller: _controller,
+                    ),
+                    RaisedButton(
+                      textColor: Colors.white,
+                      color: Color.fromARGB(255, 93, 164, 146),
+                      onPressed: () => Navigator. pop(context),
+                      padding: const EdgeInsets.all(16.0),
 
-                style: TextStyle(color: Colors.black, fontSize: 21),
-                onChanged: _setChannelName,
-                controller: _controller,
+                      child: const Text(
+                          'SET CHANNEL',
+                          style: TextStyle(fontSize: 18)
+                      ),
+                    ),
+                    Text(
+                        '\nInstructions\n',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
+                    ),
+                    Text(
+                      '1. Set your location name. This can be anything, but we recommend it be unique, eg, com.hotdang.retailstore.\n',
+                    ),
+                    Text(
+                      '2. Start hitting the + or - to increment or decrement the counter. This can be visitors coming to or leaving you store, or anything you want to count.\n'
+                    ),
+                    Text(
+                      '3. Open the app on another device (or visit https://storecounter.hotdang.ca), and put in the same location name.\n'
+                    ),
+                    Text(
+                      '4. Voila! Both instances will share the same counter!\n'
+                    ),
+                ]
               ),
-            ],
-          )
+            )
+          ]
+        ),
       ),
       appBar: AppBar(
         title: Text(widget.title, style: TextStyle(color: Colors.white)),
@@ -312,7 +359,7 @@ class _InAndOutAppState extends State<InAndOut> {
                       child: Ink(
                           decoration: const ShapeDecoration(
                               shape: CircleBorder(),
-                              color: Colors.lightGreen
+                              color: Color.fromARGB(255, 93, 164, 146),
                           ),
                           child: IconButton(
                             onPressed: _incrementCounter,
@@ -327,7 +374,7 @@ class _InAndOutAppState extends State<InAndOut> {
                       child: Ink(
                           decoration: const ShapeDecoration(
                               shape: CircleBorder(),
-                              color: Colors.red
+                              color: Color.fromARGB(255, 69, 122, 164),
                           ),
                           child: IconButton(
                             onPressed: _decrementCounter,
