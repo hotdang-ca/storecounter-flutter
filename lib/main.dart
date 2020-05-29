@@ -24,11 +24,18 @@ class SocketService {
   subscribe(String server, String channel) {
     this.channel = channel;
     this.socketServer = server;
+    this.isConnected = false;
+
+    var chan = this.channel;
+
+    this.socket.emit(EMIT_GET_COUNT_EVENT, {
+      TENANT_KEY: this.channel,
+    });
   }
 
   announceCount() {
     if (this.socketServer == null) {
-      print('Socket not initialized');
+      print('Socket has no server');
       return;
     }
 
@@ -67,7 +74,11 @@ class SocketService {
     this.socketServer = server;
     this.channel = channel;
 
-    socket = IO.io(this.socketServer, <String, dynamic>{
+    if (this.socket != null) {
+      this.socket.clearListeners();
+    }
+
+    this.socket = IO.io(this.socketServer, <String, dynamic>{
       'transports': ['websocket'],
     });
     this.isConnected = true;
@@ -106,18 +117,20 @@ void main() async {
 
   runApp(InAndOutAppContainer());
 }
-
+// green: 255, 93, 164, 146
+// blue: 255, 69, 122, 164
+// blue:
 class InAndOutAppContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'In and Out',
       theme: ThemeData(
-        primarySwatch: Colors.lightBlue,
+        primaryColor: Color.fromARGB(255, 69, 122, 164)
       ),
       home: InAndOut(
         title: 'In and Out', // TODO: base on some configuration
-        channel: 'james', // TODO: base on some configuration
+        channel: '', // TODO: base on some configuration
         socketServer: 'https://storecounter.hotdang.ca', // TODO: base on some configuration
       ),
     );
@@ -143,9 +156,26 @@ class InAndOut extends StatefulWidget {
 
 class _InAndOutAppState extends State<InAndOut> {
   int _counter = 0;
-  String _channel;
+  String _channel = '';
   bool _isListening = false;
+  TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = new TextEditingController(text: widget.channel);
+  }
+
   final SocketService socketService = injector.get<SocketService>();
+
+  void _setChannelName(newChannel) {
+    socketService.subscribe(socketService.socketServer, newChannel);
+
+    setState(() {
+      _channel = newChannel;
+      _isListening = false;
+    });
+  }
 
   void _incrementCounter() {
     socketService.increment();
@@ -178,22 +208,21 @@ class _InAndOutAppState extends State<InAndOut> {
 
   @override
   Widget build(BuildContext context) {
-
-    // TODO: maybe there is a better place to connect?
-    // In the meantime, we are at least peventing too many connections.
-
+    /**
+     * TODO: maybe there is a better place to connect?
+     * In the meantime, we are at least peventing too many connections.
+     */
     final SocketService socketService = injector.get<SocketService>();
-    socketService.createSocketConnection(widget.socketServer, widget.channel);
+
+    socketService.createSocketConnection(widget.socketServer, _channel);
 
     // TODO: see above todo. obviously need a better place to set this up, AND have access to lifecycle events
     if (!_isListening) {
       socketService.socket.on(SocketService.COUNT_EVENT, (data) {
-        print('new data');
-
         var channel = data[SocketService.TENANT_KEY];
         var count = data[SocketService.COUNT_KEY];
 
-        if (channel == widget.channel) {
+        if (channel == _channel) {
           setState(() {
             _counter = count;
           });
@@ -209,24 +238,28 @@ class _InAndOutAppState extends State<InAndOut> {
             padding: EdgeInsets.zero,
             children: <Widget>[
               DrawerHeader(
-                child: Text('Drawer Header'),
+                child: Column(
+                  children: <Widget>[
+                    Text('In And Out', style: TextStyle(color: Colors.white, fontSize: 32)),
+                    Text('A retail store counter app', style: TextStyle(color: Colors.white, fontSize: 22)),
+                  ],
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                ),
                 decoration: BoxDecoration(
-                  color: Colors.blue,
+                  color: Color.fromARGB(255, 69, 122, 164),
                 ),
               ),
-              ListTile(
-                title: Text('Item 1'),
-                onTap: () {
-                  // Update the state of the app.
-                  // ...
-                },
-              ),
-              ListTile(
-                title: Text('Item 2'),
-                onTap: () {
-                  // Update the state of the app.
-                  // ...
-                },
+              TextField(
+                decoration: InputDecoration(
+                  contentPadding: EdgeInsets.all(8),
+                  border: InputBorder.none,
+                  hintText: 'Specify a Channel Name',
+                  labelText: 'Channel Name',
+                ),
+
+                style: TextStyle(color: Colors.black, fontSize: 21),
+                onChanged: _setChannelName,
+                controller: _controller,
               ),
             ],
           )
@@ -253,7 +286,7 @@ class _InAndOutAppState extends State<InAndOut> {
                   ),
                   SizedBox(
                     child: Text(
-                      widget.channel,
+                      '$_channel',
                       style: Theme.of(context).textTheme.headline4,
                     )
                   ),
