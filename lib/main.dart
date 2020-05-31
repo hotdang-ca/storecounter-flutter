@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 Injector injector;
@@ -15,6 +16,8 @@ class SocketService {
   static const String CONNECT_EVENT = 'connect';
   static const String DISCONNECT_EVENT = 'disconnect';
 
+  static const String PREF_KEY = 'ca.fourandahalfgiraffes.inandout.channel';
+
   IO.Socket socket;
   int count = 0;
   String channel;
@@ -25,9 +28,6 @@ class SocketService {
     this.channel = channel;
     this.socketServer = server;
     this.isConnected = false;
-
-    var chan = this.channel;
-
     this.socket.emit(EMIT_GET_COUNT_EVENT, {
       TENANT_KEY: this.channel,
     });
@@ -164,12 +164,29 @@ class _InAndOutAppState extends State<InAndOut> {
   void initState() {
     super.initState();
     _controller = new TextEditingController(text: widget.channel);
+    _loadChannelName();
+  }
+
+  void _loadChannelName() async {
+    final prefs = await SharedPreferences.getInstance();
+    var channel = prefs.getString(SocketService.PREF_KEY) ?? '';
+
+    setState(() {
+      _channel = channel;
+      this._controller.text = channel;
+      socketService.subscribe(socketService.socketServer, channel);
+      _isListening = false;
+    });
   }
 
   final SocketService socketService = injector.get<SocketService>();
 
-  void _setChannelName(newChannel) {
+  void _setChannelName(newChannel) async {
     socketService.subscribe(socketService.socketServer, newChannel);
+
+    // persist
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString(SocketService.PREF_KEY, newChannel);
 
     setState(() {
       _channel = newChannel;
