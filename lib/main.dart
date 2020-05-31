@@ -322,6 +322,25 @@ class _InAndOutAppState extends State<InAndOut> {
                     Text(
                       '4. Voila! Both instances will share the same counter!\n'
                     ),
+                    RaisedButton(
+                      textColor: Colors.white,
+                      color: Color.fromARGB(255, 93, 164, 146),
+                      onPressed: () => showAboutDialog(
+                          applicationVersion: '1.0.2-3',
+                          applicationLegalese: 'Except as required by law, this app, source code, and related services is provided ​“AS IS”.\n\nFour And A Half Giraffes, Ltd. makes no other warranties, express or implied, and hereby disclaims all implied warranties, including any warranty of merchantability and warranty of fitness for a particular purpose.',
+                          applicationIcon: Image(
+                              image: AssetImage('assets/icon/icon.png',
+                            ),
+                            width: 48,
+                            height: 48,
+                          ),
+                          context: context),
+                      padding: const EdgeInsets.all(16.0),
+                      child: const Text(
+                          'About',
+                          style: TextStyle(fontSize: 18)
+                      ),
+                    ),
                 ]
               ),
             )
@@ -336,7 +355,7 @@ class _InAndOutAppState extends State<InAndOut> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
             SizedBox(
-              height: 8,
+              height: 0,
             ),
             Center(
               child: Column(
